@@ -9,12 +9,16 @@ from pathlib import Path
 import zipfile
 import shutil
 
-from video_processor import (
-    create_video_from_images, 
-    get_image_files, 
-    get_audio_duration,
-    check_ffmpeg
-)
+try:
+    from video_processor import (
+        create_video_from_images, 
+        get_image_files, 
+        get_audio_duration,
+        check_ffmpeg
+    )
+except ImportError as e:
+    st.error(f"❌ Import Error: {e}")
+    st.stop()
 
 # Page config
 st.set_page_config(
