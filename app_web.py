@@ -131,6 +131,9 @@ if st.button("🎬 Tạo Video", type="primary", use_container_width=True, disab
         st.error("❌ Vui lòng upload file audio!")
     else:
         st.session_state.processing = True
+        st.session_state.video_ready = False
+        st.session_state.video_bytes = None
+        st.session_state.video_name = None
         
         # Create temp directory
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -183,36 +186,38 @@ if st.button("🎬 Tạo Video", type="primary", use_container_width=True, disab
             )
             
             if success:
-                st.session_state.video_ready = True
-                
-                # Read video file for download
+                # Read video file and store in session state BEFORE temp dir is deleted
                 with open(output_path, 'rb') as f:
-                    video_bytes = f.read()
-                
-                st.markdown("""
-                <div class="success-box">
-                    ✅ <strong>Video đã được tạo thành công!</strong>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Download button
-                st.download_button(
-                    label="⬇️ Tải Video về máy",
-                    data=video_bytes,
-                    file_name=output_name,
-                    mime="video/mp4",
-                    type="primary",
-                    use_container_width=True
-                )
-                
-                # Preview video
-                st.subheader("📺 Xem trước")
-                st.video(video_bytes)
-                
+                    st.session_state.video_bytes = f.read()
+                st.session_state.video_name = output_name
+                st.session_state.video_ready = True
             else:
                 st.error(f"❌ Lỗi: {error}")
         
         st.session_state.processing = False
+        st.rerun()  # Rerun to display download button
+
+# Display download section if video is ready
+if st.session_state.get('video_ready') and st.session_state.get('video_bytes'):
+    st.markdown("""
+    <div class="success-box">
+        ✅ <strong>Video đã được tạo thành công!</strong>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Download button
+    st.download_button(
+        label="⬇️ Tải Video về máy",
+        data=st.session_state.video_bytes,
+        file_name=st.session_state.video_name,
+        mime="video/mp4",
+        type="primary",
+        use_container_width=True
+    )
+    
+    # Preview video
+    st.subheader("📺 Xem trước")
+    st.video(st.session_state.video_bytes)
 
 # Footer
 st.markdown("---")
