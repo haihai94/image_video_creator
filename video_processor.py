@@ -29,15 +29,18 @@ def check_ffmpeg():
 
 
 def check_nvenc():
-    """Check if NVENC is available."""
+    """Check if NVENC is actually available (not just compiled in)."""
     try:
+        # Try to actually use nvenc - this will fail if CUDA isn't available
         result = subprocess.run(
-            ['ffmpeg', '-encoders'],
+            ['ffmpeg', '-hide_banner', '-f', 'lavfi', '-i', 'nullsrc=s=64x64:d=0.1', 
+             '-c:v', 'h264_nvenc', '-f', 'null', '-'],
             capture_output=True,
             text=True,
+            timeout=10,
             creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         )
-        return 'h264_nvenc' in result.stdout
+        return result.returncode == 0
     except:
         return False
 
