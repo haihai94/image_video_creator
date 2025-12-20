@@ -19,10 +19,9 @@ try:
 except ImportError:
     GOOGLE_LIBS_AVAILABLE = False
 
-# OAuth2 scopes
+# OAuth2 scopes - Full drive access to read all folders
 SCOPES = [
-    'https://www.googleapis.com/auth/drive.readonly',  # Read files
-    'https://www.googleapis.com/auth/drive.file',      # Upload files
+    'https://www.googleapis.com/auth/drive',           # Full Drive access
     'https://www.googleapis.com/auth/userinfo.email',  # Get user email
 ]
 
