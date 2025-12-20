@@ -2,6 +2,11 @@
 natsort>=8.0.0
 streamlit>=1.28.0
 
+# Google Drive integration
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-api-python-client>=2.0.0
+
 # GUI libs (Optional - commented out for Cloud deployment)
 # tkinterdnd2>=0.3.0
 # sv-ttk>=2.0.0
