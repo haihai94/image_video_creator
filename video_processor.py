@@ -182,36 +182,46 @@ def create_video_from_images(
 
 def _build_image_filter(enable_zoom, enable_blur_bg, duration_frames, fps=30):
     """Build FFmpeg filter for a single image."""
-    filters = []
     
-    if enable_blur_bg:
-        # Blur background + centered image
-        filters.append(
+    if enable_blur_bg and enable_zoom:
+        # Blur background (STATIC) + Foreground zoom 100% → 110% from center
+        # 1. Split into bg and fg
+        # 2. Create static blur background at 1920x1080
+        # 3. Apply zoompan ONLY to foreground (before overlay)
+        # 4. Overlay zoomed foreground on static background
+        filter_str = (
+            "split[bg][fg];"
+            "[bg]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,boxblur=80:10[blur];"
+            f"[fg]scale=-1:1080:force_original_aspect_ratio=decrease,"
+            f"zoompan=z='1+0.1*on/{duration_frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+            f"d={duration_frames}:s=1920x1080:fps={fps}[zoomed];"
+            "[blur][zoomed]overlay=(W-w)/2:(H-h)/2:shortest=1"
+        )
+        return filter_str
+    
+    elif enable_blur_bg:
+        # Blur background + centered image (no zoom)
+        return (
             "split[bg][fg];"
             "[bg]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,boxblur=80:10[blur];"
             "[fg]scale='min(1920,iw)':'min(1080,ih)':force_original_aspect_ratio=decrease[img];"
             "[blur][img]overlay=(W-w)/2:(H-h)/2"
         )
+    
+    elif enable_zoom:
+        # Black background with zoom 100% → 110%
+        return (
+            f"scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,"
+            f"zoompan=z='1+0.1*on/{duration_frames}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+            f"d={duration_frames}:s=1920x1080:fps={fps}"
+        )
+    
     else:
-        # Black background with centered image
-        filters.append(
+        # Black background with centered image (no zoom)
+        return (
             "scale=1920:1080:force_original_aspect_ratio=decrease,"
             "pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
         )
-    
-    if enable_zoom:
-        # Zoom from 100% to 120% FROM CENTER
-        # x and y formulas keep the zoom centered:
-        # x = (input_width/2) - (input_width/zoom/2) = center point adjustment
-        # y = (input_height/2) - (input_height/zoom/2) = center point adjustment
-        zoom_filter = (
-            f",zoompan=z='1+0.2*on/{duration_frames}':"
-            f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
-            f"d={duration_frames}:s=1920x1080:fps={fps}"
-        )
-        filters[0] = filters[0] + zoom_filter
-    
-    return filters[0]
 
 
 def _create_video_simple(
